@@ -5,7 +5,7 @@ import time
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
-# 사륜구동 확인
+# 전진, 좌회전, 우회전 확인
 
 # =======================================
 # 1. 핀 번호 설정 (BCM 기준)
@@ -18,7 +18,6 @@ LR_IN1, LR_IN2, LR_PWM = 16, 20, 13   # 왼쪽 뒤 (LR)
 RF_IN1, RF_IN2, RF_PWM = 23, 24, 18   # 오른쪽 앞 (RF)
 RR_IN1, RR_IN2, RR_PWM = 21, 26, 19   # 오른쪽 뒤 (RR)
 
-# 모든 핀을 리스트로 묶어서 한 번에 설정하기 쉽게 만듦
 motor_pins = [
     LF_IN1, LF_IN2, LF_PWM,
     LR_IN1, LR_IN2, LR_PWM,
@@ -26,7 +25,7 @@ motor_pins = [
     RR_IN1, RR_IN2, RR_PWM
 ]
 
-# 모든 핀을 출력(OUT) 모드로 설정
+# 핀 출력 모드 설정
 for pin in motor_pins:
     GPIO.setup(pin, GPIO.OUT)
 
@@ -44,9 +43,11 @@ pwm_rf.start(0)
 pwm_rr.start(0)
 
 # =======================================
-# 3. 전진 함수 정의
+# 3. 주행 제어 함수 정의
 # =======================================
-def move_forward(speed):
+
+def forward(speed=50):
+    """4바퀴 모두 전진"""
     # 왼쪽 앞 (LF)
     GPIO.output(LF_IN1, GPIO.HIGH)
     GPIO.output(LF_IN2, GPIO.LOW)
@@ -67,10 +68,48 @@ def move_forward(speed):
     GPIO.output(RR_IN2, GPIO.LOW)
     pwm_rr.ChangeDutyCycle(speed)
 
-# =======================================
-# 4. 정지 함수 정의
-# =======================================
-def stop_motors():
+def left(speed=50):
+    """좌회전: 왼쪽 바퀴는 후진, 오른쪽 바퀴는 전진 (제자리 회전)"""
+    # 왼쪽 바퀴 후진 (LOW, HIGH)
+    GPIO.output(LF_IN1, GPIO.LOW)
+    GPIO.output(LF_IN2, GPIO.HIGH)
+    pwm_lf.ChangeDutyCycle(speed)
+    
+    GPIO.output(LR_IN1, GPIO.LOW)
+    GPIO.output(LR_IN2, GPIO.HIGH)
+    pwm_lr.ChangeDutyCycle(speed)
+
+    # 오른쪽 바퀴 전진 (HIGH, LOW)
+    GPIO.output(RF_IN1, GPIO.HIGH)
+    GPIO.output(RF_IN2, GPIO.LOW)
+    pwm_rf.ChangeDutyCycle(speed)
+    
+    GPIO.output(RR_IN1, GPIO.HIGH)
+    GPIO.output(RR_IN2, GPIO.LOW)
+    pwm_rr.ChangeDutyCycle(speed)
+
+def right(speed=50):
+    """우회전: 왼쪽 바퀴는 전진, 오른쪽 바퀴는 후진 (제자리 회전)"""
+    # 왼쪽 바퀴 전진 (HIGH, LOW)
+    GPIO.output(LF_IN1, GPIO.HIGH)
+    GPIO.output(LF_IN2, GPIO.LOW)
+    pwm_lf.ChangeDutyCycle(speed)
+    
+    GPIO.output(LR_IN1, GPIO.HIGH)
+    GPIO.output(LR_IN2, GPIO.LOW)
+    pwm_lr.ChangeDutyCycle(speed)
+
+    # 오른쪽 바퀴 후진 (LOW, HIGH)
+    GPIO.output(RF_IN1, GPIO.LOW)
+    GPIO.output(RF_IN2, GPIO.HIGH)
+    pwm_rf.ChangeDutyCycle(speed)
+    
+    GPIO.output(RR_IN1, GPIO.LOW)
+    GPIO.output(RR_IN2, GPIO.HIGH)
+    pwm_rr.ChangeDutyCycle(speed)
+
+def stop():
+    """모든 모터 정지"""
     pwm_lf.ChangeDutyCycle(0)
     pwm_lr.ChangeDutyCycle(0)
     pwm_rf.ChangeDutyCycle(0)
@@ -80,26 +119,38 @@ def stop_motors():
         GPIO.output(pin, GPIO.LOW)
 
 # =======================================
-# 5. 실제 구동 테스트 실행
+# 4. 실행 테스트 (메인 로직)
 # =======================================
-try:
-    print("🚗 4WD 동시 주행 테스트를 시작합니다!")
-    print("바닥 마찰력을 이겨내고 전진합니다 (속도 50%)...")
-    
-    move_forward(50)  # 속도 50%로 전진
-    time.sleep(3)     # 3초 동안 주행
-    
-    print("🛑 정지!")
-    stop_motors()
+if __name__ == "__main__":
+    try:
+        print("4WD 통합 주행 테스트를 시작합니다.")
+        
+        print("1. 전진 (3초)")
+        forward(50)
+        time.sleep(3)
+        stop()
+        time.sleep(1)
+        
+        print("2. 좌회전 (2초)")
+        left(50)
+        time.sleep(2)
+        stop()
+        time.sleep(1)
 
-except KeyboardInterrupt:
-    print("강제 종료됨.")
+        print("3. 우회전 (2초)")
+        right(50)
+        time.sleep(2)
+        stop()
+        
+    except KeyboardInterrupt:
+        print("사용자에 의해 강제 종료되었습니다.")
 
-finally:
-    # 핀 초기화 (안전)
-    pwm_lf.stop()
-    pwm_lr.stop()
-    pwm_rf.stop()
-    pwm_rr.stop()
-    GPIO.cleanup()
-    print("테스트 종료.")
+    finally:
+        # 핀 초기화 (안전)
+        stop()
+        pwm_lf.stop()
+        pwm_lr.stop()
+        pwm_rf.stop()
+        pwm_rr.stop()
+        GPIO.cleanup()
+        print("GPIO 핀 정리가 완료되었습니다. 테스트를 종료합니다.")
