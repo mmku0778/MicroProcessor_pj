@@ -1,1 +1,3 @@
 time,seq,src,stop_marker,slow_zone,forbidden_zone,perception_fault,allow_motion,speed_limit,fault,vehicle_send_ok
+time,seq,src,stop_marker,slow_zone,forbidden_zone,perception_fault,allow_motion,speed_limit,fault,vehicle_send_ok
+time,seq,src,stop_marker,slow_zone,forbidden_zone,perception_fault,allow_motion,speed_limit,fault,vehicle_send_ok
