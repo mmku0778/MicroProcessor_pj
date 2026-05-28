@@ -1,0 +1,7 @@
+# host_topst_gateway_to_vehicle.py에서 아두이노 시리얼 통신을 직접 읽어오는 방식에서 (host_topst_gateway_to_vehicle.py)
+
+
+# 아두이노의 시리얼 값을 읽어 5006번 포트로 전송하는 송신 전용 스크립트와 (arduino_sender.py)
+
+# AI-G인 5005번과 컨트롤러 5006번 포트를 모드 열어두고 기다리는 통합 게이트웨이 스크립트로 분리 (host_gateway_main.py)
+
